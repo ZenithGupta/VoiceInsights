@@ -63,7 +63,7 @@ fun MainScreen() {
             }
         } else {
             Text(
-                text = if (isRecording) "Recording..." else "Ready to Record",
+                text = if (isRecording) "Recording into chunks..." else "Ready to Record",
                 style = MaterialTheme.typography.headlineMedium
             )
             Spacer(modifier = Modifier.height(48.dp))
