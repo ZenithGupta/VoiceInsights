@@ -61,8 +61,8 @@ class DriveUploadWorker(
             }
 
             val folderId = getOrCreateDriveFolder(driveService)
-            // Only upload completed files — skip .recording (in-progress) files
-            val files = audioDir.listFiles { f -> !f.name.endsWith(".recording") } ?: emptyArray()
+            // Only upload completed .m4a files — skip .pcm and .recording files
+            val files = audioDir.listFiles { f -> f.name.endsWith(".m4a") } ?: emptyArray()
             var uploadedCount = 0
             var failedCount = 0
 
@@ -90,7 +90,7 @@ class DriveUploadWorker(
             // Any leftover files that failed to upload will simply be picked up on the next run.
             return@withContext Result.success()
         } catch (e: Exception) {
-            Log.e(TAG, "Upload worker error: ${e.message}")
+            Log.e(TAG, "Upload worker error", e)
             Result.retry()
         }
     }

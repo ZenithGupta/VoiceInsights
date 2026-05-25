@@ -42,3 +42,37 @@ app/src/main/java/com/example/voiceinsights/
 
 ## License
 Private — Personal use only.
+
+## Audio Processing & Sarvam AI Integration (Python)
+
+A set of Python scripts is provided in the `scripts/` directory to process audio uploaded to Google Drive.
+
+### Features
+1. **Silence Removal**: Uses the Silero VAD machine learning model to strip out silent background noise, preserving only actual speech.
+2. **Auto-Upload**: Converts the processed audio back to `.m4a` and uploads it directly back into your Google Drive in the original folder.
+3. **Sarvam API**: Transcribes the processed audio directly using Sarvam AI's Speech-to-Text API.
+
+### Setup Instructions
+1. Install [Python 3.8+](https://www.python.org/downloads/) on your computer.
+2. Install **FFmpeg** on your computer and make sure it is added to your system's PATH (required for converting audio to `.m4a`).
+3. Open a terminal and navigate to the `scripts/` folder inside the project.
+4. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+5. Get Google Drive API Credentials:
+   - Go to the [Google Cloud Console](https://console.cloud.google.com/).
+   - Enable the **Google Drive API**.
+   - Create OAuth 2.0 Client ID credentials (Desktop app).
+   - Download the JSON file, rename it to `credentials.json`, and place it inside the `scripts/` folder.
+6. (Optional) For transcription, set your Sarvam AI Pro Plan API key as an environment variable:
+   - Windows (Command Prompt): `set SARVAM_API_KEY=your_api_key_here`
+   - Windows (PowerShell): `$env:SARVAM_API_KEY="your_api_key_here"`
+   - Mac/Linux: `export SARVAM_API_KEY="your_api_key_here"`
+
+### Running the Script
+Run the script to automatically fetch all `.m4a` files from the last 45 days, clean them, re-upload them to Drive, and transcribe them:
+```bash
+python process_audio.py
+```
+*(On first run, a browser window will open asking you to log into your Google Account to grant Drive access.)*
