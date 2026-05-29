@@ -1,6 +1,10 @@
 package com.example.voiceinsights
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -50,6 +54,9 @@ class MainActivity : ComponentActivity() {
         // Schedule periodic call recording scan
         CallRecordingScanWorker.schedule(this)
 
+        // Check if launched from boot notification to auto-start recording
+        handleAutoStartIntent(intent)
+
         setContent {
             VoiceInsightsTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -65,9 +72,52 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleAutoStartIntent(intent)
+    }
+
+    /**
+     * If this activity was launched from the boot notification with auto_start_recording=true,
+     * start the recording service immediately.
+     */
+    private fun handleAutoStartIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra("auto_start_recording", false) == true) {
+            Log.d(TAG, "Auto-start recording requested from boot notification")
+            if (GoogleDriveAuth.isSignedIn(this)) {
+                val serviceIntent = Intent(this, RecordingService::class.java).apply {
+                    action = "START_RECORDING"
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
+                Log.d(TAG, "Recording service started via boot auto-start")
+            } else {
+                Log.w(TAG, "Cannot auto-start: not signed into Google Drive")
+            }
+        }
+    }
+
     private fun startGoogleSignIn() {
         Log.d(TAG, "Starting Google Sign-In...")
         val signInIntent = GoogleDriveAuth.getSignInIntent(this)
         signInLauncher.launch(signInIntent)
+    }
+
+    /**
+     * Checks if overlay permission is granted and prompts the user if not.
+     * Call this when enabling auto-start-on-boot feature.
+     */
+    fun promptOverlayPermissionIfNeeded() {
+        if (!Settings.canDrawOverlays(this)) {
+            Log.d(TAG, "Overlay permission not granted — prompting user")
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
     }
 }

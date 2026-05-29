@@ -74,6 +74,9 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // ONNX Runtime for Silero VAD
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.16.1")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

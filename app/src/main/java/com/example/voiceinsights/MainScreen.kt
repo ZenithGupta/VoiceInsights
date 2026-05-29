@@ -3,6 +3,7 @@ package com.example.voiceinsights
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -26,6 +27,7 @@ fun MainScreen(
     val context = LocalContext.current
     var isRecording by remember { mutableStateOf(RecordingService.isServiceRunning) }
     var permissionsGranted by remember { mutableStateOf(false) }
+    var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
 
     val requiredPermissions = mutableListOf(
         Manifest.permission.RECORD_AUDIO,
@@ -58,10 +60,11 @@ fun MainScreen(
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
-    DisposableEffect(lifecycleOwner, permissionsGranted, isSignedIn) {
+    DisposableEffect(lifecycleOwner, permissionsGranted, hasOverlayPermission, isSignedIn) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                if (permissionsGranted && isSignedIn && !RecordingService.isServiceRunning) {
+                hasOverlayPermission = Settings.canDrawOverlays(context)
+                if (permissionsGranted && hasOverlayPermission && isSignedIn && !RecordingService.isServiceRunning) {
                     isRecording = true
                     val intent = android.content.Intent(context, RecordingService::class.java).apply {
                         action = "START_RECORDING"
@@ -85,7 +88,23 @@ fun MainScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (!permissionsGranted) {
+        if (!hasOverlayPermission) {
+            Text(
+                "VoiceInsights needs 'Display over other apps' permission to auto-start after a device reboot.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { 
+                val intent = android.content.Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION, 
+                    android.net.Uri.parse("package:${context.packageName}")
+                )
+                context.startActivity(intent)
+            }) {
+                Text("Grant Overlay Permission")
+            }
+        } else if (!permissionsGranted) {
             Text(
                 "VoiceInsights needs Microphone, Notification, and Storage permissions to run.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -169,15 +188,18 @@ fun MainScreen(
                         context.startService(intent)
                     }
                 },
+                enabled = isSignedIn,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                    containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
                 shape = CircleShape,
                 modifier = Modifier.size(160.dp)
             ) {
                 Text(
                     text = if (isRecording) "STOP" else "START",
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = if (isSignedIn) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

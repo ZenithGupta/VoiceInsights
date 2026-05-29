@@ -68,7 +68,7 @@ object GoogleDriveAuth {
             context,
             listOf(DriveScopes.DRIVE_FILE)
         ).apply {
-            selectedAccountName = email
+            selectedAccount = account.account ?: android.accounts.Account(email, "com.google")
         }
 
         return Drive.Builder(

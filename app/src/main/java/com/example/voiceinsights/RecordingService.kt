@@ -40,6 +40,12 @@ class RecordingService : Service() {
     }
 
     private fun startRecording() {
+        if (!GoogleDriveAuth.isSignedIn(this)) {
+            Log.e("RecordingService", "Drive not connected. Cannot start recording to prevent PCM bloat.")
+            stopSelf()
+            return
+        }
+
         createNotificationChannel()
         val notification: Notification = NotificationCompat.Builder(this, "VoiceInsightsChannel")
             .setContentTitle("VoiceInsights Active")
